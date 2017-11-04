@@ -13,7 +13,7 @@ end
 
 
 Fs = 8000000;
-osr = 4;
+osr = 8;
 Fsym = Fs/osr;
 
 Fc = 800000000;

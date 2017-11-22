@@ -6,12 +6,12 @@ pkg load control
 pkg load signal
 pkg load communications
 
-Fiq = 128;
+Fiq = 3e6;
 Tiq = 1/Fiq;
 
-Nsb = Fiq-1;
-Tsym = 1;
-Fsym = 1/Tsym;
+Nsb = 16;
+Fsym = 15e3;
+Tsym = 1/Fsym;
 osr_sym = Fiq/Fsym;
 
 txBits = randint(Nsb,1) + j * randint(Nsb,1);
@@ -45,4 +45,11 @@ end
 %disp(rxNRZs');
 figure(1);subplot(2,1,1);plot(real(txNRZs));subplot(2,1,2);plot(imag(txNRZs))
 figure(2);subplot(2,1,1);plot(real(rxNRZs));subplot(2,1,2);plot(imag(rxNRZs))
-figure(3);plot(txOut_fft_db);
+delta_f = Fiq/length(txOut);
+f = -Fiq/2:delta_f:Fiq/2-delta_f;
+figure(3);plot(f,txOut_fft_db);
+
+
+f = -Fiq/2:delta_f:Fiq/2-delta_f;
+r = spectral_xdf(rxIn);
+figure(4);plot(r(:,1)*Fiq-Fiq/2,fftshift(r(:,2)));

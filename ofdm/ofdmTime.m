@@ -6,52 +6,43 @@ pkg load control
 pkg load signal
 pkg load communications
 
-Fs = 32;
-Ts = 1/Fs;
+Fiq = 128;
+Tiq = 1/Fiq;
 
-Nsb = 16;
+Nsb = Fiq-1;
 Tsym = 1;
 Fsym = 1/Tsym;
-osr = Fs/Fsym;
+osr_sym = Fiq/Fsym;
 
 txBits = randint(Nsb,1) + j * randint(Nsb,1);
 txNRZs = 2*txBits - (1 + j);
 
-txNRZs_up = repmat(txNRZs,1,osr);
+txNRZs_up = repmat(txNRZs,1,osr_sym);
 
-t = 0:Ts:Tsym-Ts;
-%sub(1,:) = [txNRZs_up(1,:) zeros(1,length(t)-osr)];
-%sub(2,:) = [txNRZs_up(2,:) zeros(1,length(t)-osr)];
-%sub(3,:) = [txNRZs_up(3,:) zeros(1,length(t)-osr)];
-%sub(4,:) = [txNRZs_up(4,:) zeros(1,length(t)-osr)];
+t = 0:Tiq:Tsym-Tiq;
 for i = 1:Nsb
     sub(i,:) = txNRZs_up(i,:);
 end
 
-%modOut(1,:) = sub(1,:) .* exp(j*2*pi*1*Fsym*t);
-%modOut(2,:) = sub(2,:) .* exp(j*2*pi*2*Fsym*t);
-%modOut(3,:) = sub(3,:) .* exp(j*2*pi*3*Fsym*t);
+Fsc_pos = (1:floor(Nsb/2))*Fsym;
+Fsc_neg = (floor(-Nsb/2):1:-1)*Fsym;
+Fsc = [Fsc_neg Fsc_pos];
 
 for i = 1:Nsb
-    modOut(i,:) = sub(i,:) .* exp(j*2*pi*i*Fsym*t);
+    modOut(i,:) = sub(i,:) .* exp(j*2*pi*Fsc(i)*t);
 end        
 
-txOut = sum(modOut(1:Nsb,:));
+txOut = sum(modOut(1:end,:));
 rxIn = txOut;
 
-%demodOut(1,:) = rxIn .* exp(-j*2*pi*1*Fsym*t);
-%rxBits(1,:) = sum(demodOut(1,:))/osr;
-%demodOut(2,:) = rxIn .* exp(-j*2*pi*2*Fsym*t);
-%rxBits(2,:) = sum(demodOut(2,:))/osr;
-%demodOut(3,:) = rxIn .* exp(-j*2*pi*3*Fsym*t);
-%rxBits(3,:) = sum(demodOut(3,:))/osr;
-%demodOut(4,:) = rxIn .* exp(-j*2*pi*4*Fsym*t);
-%rxBits(4,:) = sum(demodOut(4,:))/osr;
+txOut_fft_db = mag2db(abs(fftshift(fft(txOut)/length(txOut))));
 
 for i = 1:Nsb
-    demodOut(i,:) = rxIn .* exp(-j*2*pi*i*Fsym*t);
-    rxNRZs(i,:) = sum(demodOut(i,:))/osr;
+    demodOut(i,:) = rxIn .* exp(-j*2*pi*Fsc(i)*t);
+    rxNRZs(i,:) = sum(demodOut(i,:))/osr_sym;
 end
-disp(txNRZs);
-disp(rxNRZs);
-
+%disp(txNRZs');
+%disp(rxNRZs');
+figure(1);subplot(2,1,1);plot(real(txNRZs));subplot(2,1,2);plot(imag(txNRZs))
+figure(2);subplot(2,1,1);plot(real(rxNRZs));subplot(2,1,2);plot(imag(rxNRZs))
+figure(3);plot(txOut_fft_db);

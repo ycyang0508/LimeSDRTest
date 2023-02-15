@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     const double sample_rate = 20e6;    //sample rate to 5 MHz
     const double tone_freq = 0.4e5; //tone frequency
     const double center_freq = 1.2e9;
-    const double rx_gain = 0.670;
+    const double rx_gain = 0.661;
     const double tx_gain = 0.40;
 
     const double f_ratio = tone_freq/sample_rate;
@@ -91,19 +91,22 @@ int main(int argc, char** argv)
     if (LMS_SetNormalizedGain(device, LMS_CH_TX, 0, tx_gain) != 0)
         error();
 
+    if (LMS_SetLPFBW(device, LMS_CH_RX, 0, sample_rate) != 0)
+        error();
+
+
     //calibrate Tx, continue on failure
-    LMS_Calibrate(device, LMS_CH_TX, 0, sample_rate, 0);
-    LMS_Calibrate(device, LMS_CH_RX, 0, sample_rate, 0);
+    //if (LMS_Calibrate(device, LMS_CH_TX, 0, sample_rate, 0) != 0)
+    //    error();
 
-
+    if (LMS_Calibrate(device, LMS_CH_RX, 0, sample_rate, 0) != 0)
+        error();
 
     //Enable test signals generation in RX channels
     //To receive data from RF, remove these lines or change signal to LMS_TESTSIG_NONE
     if (LMS_SetTestSignal(device, LMS_CH_RX, 0, LMS_TESTSIG_NONE , 0, 0) != 0)
         error();
 
-    LMS_Calibrate(device, LMS_CH_TX, 0, sample_rate, 0);
-    LMS_Calibrate(device, LMS_CH_RX, 0, sample_rate, 0);
 
     //Streaming Setup
 

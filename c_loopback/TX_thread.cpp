@@ -14,7 +14,7 @@
 using namespace std;
 extern lms_device_t* device;
 extern const int chCount;
-lms_stream_t tx_streams[2];
+extern lms_stream_t tx_streams[2];
 extern int error();
 
 extern const double sample_rate ;    //sample rate to 5 MHz
@@ -23,25 +23,13 @@ extern const double center_freq ;
 extern const double rx_gain ;
 extern const double tx_gain ;
 extern const double f_ratio ;
+extern int bufersize ;
 
-extern std::mutex mtx;   
-extern std::atomic<int> counter;
+int16_t * tx_buffers[2];
+
 
 void TX_thread() {
-    std::unique_lock<std::mutex> lck (mtx,std::defer_lock);
-    lck.lock();
-    for (int i = 0; i < chCount; ++i)
-    {
-        tx_streams[i].channel = i; //channel number
-        tx_streams[i].fifoSize = 1024 * 1024 * 16; //fifo size in samples
-        tx_streams[i].throughputVsLatency = 0.5; //some middle ground
-        tx_streams[i].isTx = true; //TX channel
-        tx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
-        if (LMS_SetupStream(device, &tx_streams[i]) != 0)
-            error();
-    }
-    const int bufersize = 1024 * 64; //complex samples per buffer
-    int16_t * tx_buffers[chCount];
+
     for (int i = 0; i < chCount; ++i)
     {
         tx_buffers[i] = new int16_t[bufersize * 2]; //buffer to hold complex values (2*samples))
@@ -58,31 +46,15 @@ void TX_thread() {
 #endif        
     }   
     cout << "Tx tone frequency: " << tone_freq/1e6 << " MHz" << endl;
-
-    //Start streaming
-    for (int i = 0; i < chCount; ++i)
-    {
-        LMS_StartStream(&tx_streams[i]);
-    }
+    
     lms_stream_meta_t tx_metadata; //Use metadata for additional control over sample send function behavior
     tx_metadata.flushPartialPacket = false; //do not force sending of incomplete packet
     tx_metadata.waitForTimestamp = false; //Enable synchronization to HW timestamp
 
     auto t1 = chrono::high_resolution_clock::now();
     auto t2 = t1;
-    printf("Tx1\n");
     
-    lck.unlock();
-    
-    counter--;
-    while(counter > 0)
-    {
-        std::this_thread::yield();
-    }
-    
-    //std::this_thread::yield();
-
-    while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(1000)) //run for 10 seconds
+    while (chrono::high_resolution_clock::now() - t1 < chrono::seconds(10)) //run for 10 seconds
     {
         for (int i = 0; i < chCount; ++i)
         {

@@ -27,8 +27,12 @@ double center_freq = 1.2e9;
 double rx_gain = 0.661;
 double tx_gain = 0.40;
 double f_ratio = tone_freq/sample_rate;
-std::mutex mtx; 
-std::atomic<int> counter{2};
+int bufersize = 1024 * 64; //complex samples per buffer
+
+lms_stream_t tx_streams[2];
+lms_stream_t rx_streams[2];
+
+
 
 extern void TX_thread();
 extern void RX_thread();
@@ -40,6 +44,48 @@ int error()
     if (device != NULL)
         LMS_Close(device);
     exit(-1);
+}
+
+void do_init_tx()
+{
+    for (int i = 0; i < chCount; ++i)
+    {
+        tx_streams[i].channel = i; //channel number
+        tx_streams[i].fifoSize = 1024 * 1024 * 16; //fifo size in samples
+        tx_streams[i].throughputVsLatency = 0.5; //some middle ground
+        tx_streams[i].isTx = true; //TX channel
+        tx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
+        if (LMS_SetupStream(device, &tx_streams[i]) != 0)
+            error();
+    }
+    
+    //Start streaming
+    for (int i = 0; i < chCount; ++i)
+    {
+        LMS_StartStream(&tx_streams[i]);
+    }
+    
+    printf("Tx init done \n");
+}
+
+void do_init_rx()
+{
+    for (int i = 0; i < chCount; ++i)
+    {
+        rx_streams[i].channel = i; //channel number
+        rx_streams[i].fifoSize = 1024 * 1024 * 4; //fifo size in samples
+        rx_streams[i].throughputVsLatency = 0.5; //some middle ground
+        rx_streams[i].isTx = false; //RX channel
+        rx_streams[i].dataFmt = lms_stream_t::LMS_FMT_I12; //12-bit integers
+        if (LMS_SetupStream(device, &rx_streams[i]) != 0)
+            error();
+    }
+
+    //Start streaming
+    for (int i = 0; i < chCount; ++i)
+    {        
+        LMS_StartStream(&rx_streams[i]);
+    }
 }
 
 int main(int argc, char** argv)
@@ -117,6 +163,10 @@ int main(int argc, char** argv)
     //To receive data from RF, remove these lines or change signal to LMS_TESTSIG_NONE
     if (LMS_SetTestSignal(device, LMS_CH_RX, 0, LMS_TESTSIG_NONE , 0, 0) != 0)
         error();
+
+    do_init_tx();
+    do_init_rx();
+
     std::thread tx_t(TX_thread);
     std::thread rx_t(RX_thread);
 

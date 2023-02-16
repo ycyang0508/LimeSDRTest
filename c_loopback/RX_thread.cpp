@@ -6,11 +6,16 @@
 #include <mutex> 
 #include <atomic>
 #include <chrono>
-#include <chrono>
+#include <memory>
+
 
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
 #endif
+#include "threadSafeQueue.h"
+
+typedef std::shared_ptr<uint16_t[]> buf_ptr;
+typedef ThreadSafeQueue< buf_ptr > thr_safe_q_t;
 
 
 using namespace std;

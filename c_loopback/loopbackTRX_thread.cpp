@@ -11,9 +11,15 @@
 #include <mutex>
 #include <atomic>
 #include <cstdint>
+#include <memory>
+
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
 #endif
+#include "threadSafeQueue.h"
+
+typedef std::shared_ptr<uint16_t[]> buf_ptr;
+typedef ThreadSafeQueue< buf_ptr > thr_safe_q_t;
 
 using namespace std;
 
@@ -31,7 +37,6 @@ int bufersize = 1024 * 64; //complex samples per buffer
 
 lms_stream_t tx_streams[2];
 lms_stream_t rx_streams[2];
-
 
 
 extern void TX_thread();
@@ -165,7 +170,7 @@ int main(int argc, char** argv)
         error();
 
     do_init_tx();
-    do_init_rx();
+    do_init_rx();    
 
     std::thread tx_t(TX_thread);
     std::thread rx_t(RX_thread);

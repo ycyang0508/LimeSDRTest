@@ -7,9 +7,12 @@
 #include <atomic>
 #include <cstdint>
 #include <chrono>
+#include <memory>
+
 #ifdef USE_GNU_PLOT
 #include "gnuPlotPipe.h"
 #endif
+#include "threadSafeQueue.h"
 
 using namespace std;
 extern lms_device_t* device;
@@ -26,6 +29,9 @@ extern const double f_ratio ;
 extern int bufersize ;
 
 int16_t * tx_buffers[2];
+
+typedef std::shared_ptr<uint16_t[]> buf_ptr;
+typedef ThreadSafeQueue< buf_ptr > thr_safe_q_t;
 
 
 void TX_thread() {

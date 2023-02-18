@@ -12,16 +12,10 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-
-#ifdef USE_GNU_PLOT
-#include "gnuPlotPipe.h"
-#endif
 #include "threadSafeQueue.h"
 
 typedef std::shared_ptr<uint16_t[]> buf_ptr;
 typedef ThreadSafeQueue< buf_ptr > thr_safe_q_t;
-
-using namespace std;
 
 //Device structure, should be initialize to NULL
 lms_device_t* device = NULL;
@@ -32,14 +26,10 @@ double center_freq = 1.2e9;
 double rx_gain = 0.664;
 double tx_gain = 0.40;
 
-int bufersize = 1024 * 64; //complex samples per buffer
-
-//lms_stream_t tx_streams[2];
-
+using namespace std;
 
 extern void TX_thread();
 extern void RX_thread();
-
 
 int error()
 {
@@ -121,13 +111,9 @@ int limesdr_init()
     //To receive data from RF, remove these lines or change signal to LMS_TESTSIG_NONE
     if (LMS_SetTestSignal(device, LMS_CH_RX, 0, LMS_TESTSIG_NONE , 0, 0) != 0)
         error();
-
-    //do_init_tx();
-    //do_init_rx();    
-
+        
     return 0;
 }
-
 
 void limesdr_close() {
 

@@ -19,12 +19,15 @@ extern void TX_thread(cbufferf *cb_in_ptr,std::chrono::seconds op_time);
 extern void RX_dat_thread(cbufferf *cb_in_ptr,std::chrono::seconds op_time);
 extern void RX_thread(cbufferf *cb_in_ptr,std::chrono::seconds op_time);
 
+extern int tx_bufersize ;
+extern int rx_bufersize ;
+
 void lime_test() {
 
     std::chrono::seconds op_time(20);
 
-    cbufferf tx_cb = cbufferf_create(bufersize * 2 * 512);
-    cbufferf rx_cb = cbufferf_create(bufersize * 2 * 512);
+    cbufferf tx_cb = cbufferf_create(tx_bufersize * 2 * 512);
+    cbufferf rx_cb = cbufferf_create(rx_bufersize * 2 * 512);
 
     limesdr_init();    
     std::thread tx_dt_t(TX_dat_thread,&tx_cb,op_time);
